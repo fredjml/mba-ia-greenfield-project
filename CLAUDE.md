@@ -12,7 +12,7 @@ This is a monorepo with two main areas:
 
 - `nestjs-project/` — Backend API (NestJS 11, TypeScript, Express). Contains modules for users, channels, videos, comments, etc.
 - `docs/` — Project documentation, architecture diagrams, and planning.
-- `next-frontend/` (Next.js) — not yet initialized
+- `next-frontend/` — Next.js frontend; video UI remains out of scope for Phase 03
 
 ## Architecture (C4 Container Diagram)
 
@@ -27,6 +27,15 @@ See `docs/diagrams/software-arch.mermaid` for the full diagram. Key containers:
 - **Email Service** (SMTP) → account confirmation and password recovery
 
 The API and video worker are separate NestJS entrypoints. The worker consumes the `video-processing` BullMQ queue and uses FFmpeg/ffprobe to create thumbnails and media metadata.
+
+## Phase 03 Videos
+
+- Scope is backend only: API, worker, PostgreSQL persistence, MinIO storage, Redis/BullMQ and process artifacts. Do not add video UI to `next-frontend/` in this phase.
+- Uploads are multipart and direct to object storage through presigned part URLs. Video bytes must not pass through or be buffered by the API.
+- The API pre-registers the video, completes or aborts multipart upload, and enqueues `process-video`; the separate worker probes metadata and generates the thumbnail.
+- Private video operations resolve JWT user to channel and return `404` for missing or cross-channel resources.
+- Streaming proxies authorized object ranges with `200`/`206`; download returns the original object as an attachment.
+- Source of truth: `docs/phases/phase-03-videos/phase-03-videos.md`; implementation evidence: `docs/phases/phase-03-videos/README.md` and `progress.md`.
 
 ## Docker Networking
 

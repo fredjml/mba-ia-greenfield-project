@@ -9,11 +9,11 @@ sources_mtime:
 issues: []
 advisories:
   - id: ADV-01
-    status: open
-    summary: "Context7 must be re-fetched immediately before implementation if installed versions drift from library-refs.md."
+    status: resolved
+    summary: "Installed Phase 03 dependency versions were recorded in library-refs.md and validated against package-lock.json."
   - id: ADV-02
-    status: open
-    summary: "Docker baseline should be recorded in progress.md before the first implementation SI."
+    status: resolved
+    summary: "Docker baseline and final six-service runtime evidence are recorded in progress.md."
 ---
 
 # phase-03-videos - Validation

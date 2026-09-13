@@ -13,9 +13,14 @@ describe('StorageService (integration)', () => {
     process.env = {
       ...originalEnv,
       STORAGE_ENDPOINT:
-        process.env.TEST_STORAGE_ENDPOINT ?? 'http://localhost:9000',
+        process.env.TEST_STORAGE_ENDPOINT ??
+        process.env.STORAGE_ENDPOINT ??
+        'http://minio:9000',
       STORAGE_PUBLIC_ENDPOINT:
-        process.env.TEST_STORAGE_PUBLIC_ENDPOINT ?? 'http://localhost:9000',
+        process.env.TEST_STORAGE_PUBLIC_ENDPOINT ??
+        process.env.TEST_STORAGE_ENDPOINT ??
+        process.env.STORAGE_ENDPOINT ??
+        'http://minio:9000',
     };
 
     module = await Test.createTestingModule({
@@ -48,7 +53,7 @@ describe('StorageService (integration)', () => {
     const parsedUrl = new URL(url);
 
     expect(uploadId).toBeTruthy();
-    expect(parsedUrl.origin).toBe('http://localhost:9000');
+    expect(parsedUrl.origin).toBe(process.env.STORAGE_PUBLIC_ENDPOINT);
     expect(parsedUrl.searchParams.get('partNumber')).toBe('1');
     expect(parsedUrl.searchParams.get('uploadId')).toBe(uploadId);
     expect(parsedUrl.searchParams.get('X-Amz-Signature')).toBeTruthy();

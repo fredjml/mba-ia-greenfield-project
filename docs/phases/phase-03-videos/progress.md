@@ -136,3 +136,13 @@
 - **Final review:** independent review passed without blocking findings after upload DTO schemas, binary MIME contracts and automatic Compose startup were corrected. Video E2E passed `16/16` with the worker active after queue idempotency stopped depending on the transient BullMQ `wait` state.
 - **Final report:** implementation scope, validation evidence, residual risks and future phases are consolidated in `docs/phases/phase-03-videos/final-report.md`.
 - **Decision:** SI-03.8 and Phase 03 accepted. Full DoD passed and no critical/high security finding remains open.
+
+## Final compliance audit - 2026-09-13
+
+- **Environment note:** direct host execution is not the authoritative path for this project. `npm test` through PowerShell was first blocked by `npm.ps1` execution policy; `npm.cmd test` on the Windows host then failed because integration specs require Docker DNS names (`db`, `redis`, `mailpit`) that do not resolve on the host. Compose execution is the documented backend environment.
+- **Corrections applied:** Jest unit/integration and E2E runs were serialized with `maxWorkers: 1`; storage, queue and video E2E specs now default to Compose service names (`minio`, `redis`, `db`) while preserving `TEST_*` overrides for alternate hosts.
+- **Compose runtime:** `docker compose up -d --build` completed; `docker compose ps` showed `nestjs-api`, `worker`, `db`, `mailpit`, `minio` and `redis` up, with stateful services healthy.
+- **Worker runtime:** recent logs show `WorkerModule dependencies initialized`; API runtime check returned HTTP `200`.
+- **Final commands:** `docker compose exec -T nestjs-api npm test` passed with `36/36` suites and `199/199` tests; `docker compose exec -T nestjs-api npm run test:e2e` passed with `4/4` suites and `68/68` tests; `docker compose exec -T nestjs-api npx tsc --noEmit`, `npm run lint`, `npm run build`, `npm audit --omit=dev`, `npm audit` and `git diff --check` all returned code `0`.
+- **Media opt-in:** `docker compose exec -T worker sh -lc "RUN_MEDIA_INTEGRATION=true npm test -- --runInBand src/videos/video-processor.integration-spec.ts"` passed with `1/1` suite and `2/2` FFmpeg/ffprobe tests.
+- **Compliance decision:** no functional, documentation, infrastructure or DoD blocker remains open for Phase 03.

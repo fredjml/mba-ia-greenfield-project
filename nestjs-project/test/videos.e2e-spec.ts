@@ -31,10 +31,19 @@ describe('Videos (e2e)', () => {
   const jobIdsToRemove: string[] = [];
 
   beforeAll(async () => {
-    process.env.DB_HOST = 'localhost';
-    process.env.STORAGE_ENDPOINT = 'http://localhost:9000';
-    process.env.STORAGE_PUBLIC_ENDPOINT = 'http://localhost:9000';
-    process.env.REDIS_HOST = 'localhost';
+    process.env.DB_HOST =
+      process.env.TEST_DB_HOST ?? process.env.DB_HOST ?? 'db';
+    process.env.STORAGE_ENDPOINT =
+      process.env.TEST_STORAGE_ENDPOINT ??
+      process.env.STORAGE_ENDPOINT ??
+      'http://minio:9000';
+    process.env.STORAGE_PUBLIC_ENDPOINT =
+      process.env.TEST_STORAGE_PUBLIC_ENDPOINT ??
+      process.env.TEST_STORAGE_ENDPOINT ??
+      process.env.STORAGE_ENDPOINT ??
+      'http://minio:9000';
+    process.env.REDIS_HOST =
+      process.env.TEST_REDIS_HOST ?? process.env.REDIS_HOST ?? 'redis';
 
     const moduleFixture = await Test.createTestingModule({
       imports: [AppModule],
@@ -61,7 +70,7 @@ describe('Videos (e2e)', () => {
     channelRepository = dataSource.getRepository(Channel);
     videoRepository = dataSource.getRepository(Video);
     inspectionQueue = new Queue('video-processing', {
-      connection: { host: 'localhost', port: 6379 },
+      connection: { host: process.env.REDIS_HOST, port: 6379 },
     });
   }, 30000);
 
@@ -212,7 +221,9 @@ describe('Videos (e2e)', () => {
     expect(body.partSize).toBe(10 * 1024 * 1024);
     expect(body.parts).toHaveLength(2);
     expect(body.parts[0].partNumber).toBe(1);
-    expect(body.parts[0].url).toContain('http://localhost:9000/');
+    expect(body.parts[0].url).toContain(
+      `${process.env.STORAGE_PUBLIC_ENDPOINT}/`,
+    );
 
     const video = await videoRepository.findOneByOrFail({
       id: body.videoId,

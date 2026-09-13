@@ -2,7 +2,7 @@
 
 ## Environment Startup Verification
 
-**Default behavior:** starting the environment means starting **only infrastructure services** (database, mail, storage and queue) — **never** start the NestJS API or worker unless the user explicitly asks to run/serve the project (e.g., "rode o projeto", "suba o servidor", "run the app").
+**Default behavior:** `docker compose up -d` starts the NestJS API, video worker and infrastructure services. Use explicit service names when only infrastructure is required.
 
 After starting infrastructure, always confirm the containers are up before proceeding:
 
@@ -16,24 +16,18 @@ Then verify each infrastructure service is actually ready to accept connections 
 - **Redis:** `docker compose exec redis redis-cli ping` — expect `PONG`
 - **MinIO:** `http://localhost:9000/minio/health/ready` — expect HTTP `200`
 
-Only start the NestJS dev server (`npm run start:dev`) and worker (`npm run start:worker:dev`) when the user **explicitly** asks to run the application — never as part of "start the environment".
+The Compose commands for `nestjs-api` and `worker` install the locked dependencies in separate Linux volumes and start both processes automatically.
 
 ## Development Environment
 
 This project runs inside Docker. Always use the container for development:
 
 ```bash
-# Start infrastructure only
+# Start API, worker and infrastructure
+docker compose up -d --build
+
+# Start infrastructure only when application processes are not required
 docker compose up -d db mailpit minio redis
-
-# Install dependencies (first time only)
-docker compose exec nestjs-api npm install
-
-# Run the dev server (watch mode)
-docker compose exec nestjs-api npm run start:dev
-
-# Run the video worker (watch mode)
-docker compose exec worker npm run start:worker:dev
 ```
 
 Services:

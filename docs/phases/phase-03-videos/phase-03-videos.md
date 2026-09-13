@@ -376,7 +376,7 @@ Payload:
 
 Job options:
 
-- deterministic `jobId`: `process-video:<videoId>`
+- deterministic `jobId`: `process-video-<videoId>` (BullMQ custom IDs cannot contain `:`)
 - attempts: 3
 - backoff: exponential
 - removeOnComplete: bounded count
@@ -397,16 +397,16 @@ SI-03.1..SI-03.7 -> SI-03.8
 
 ## Deliverables
 
-- [ ] `videos` table and TypeORM entity linked to `channels`
-- [ ] MinIO, Redis and worker in Docker Compose
-- [ ] Multipart direct upload with presigned URLs
-- [ ] Complete/abort upload endpoints
-- [ ] BullMQ producer and worker consumer
-- [ ] FFmpeg/ffprobe metadata and thumbnail generation
-- [ ] Unique video slug
-- [ ] Streaming endpoint with Range support
-- [ ] Download endpoint
-- [ ] Unit, integration and e2e tests
-- [ ] `progress.md` updated per SI
-- [ ] `CLAUDE.md` updated after code is real
-- [ ] `npm test`, `npm run test:e2e`, `npx tsc --noEmit`, `npm run lint` pass
+- [x] `videos` table and TypeORM entity linked to `channels`
+- [x] MinIO, Redis and worker in Docker Compose
+- [x] Multipart direct upload with presigned URLs
+- [x] Complete/abort upload endpoints
+- [x] BullMQ producer and worker consumer
+- [x] FFmpeg/ffprobe metadata and thumbnail generation
+- [x] Unique video slug
+- [x] Streaming endpoint with Range support
+- [x] Download endpoint
+- [x] Unit, integration and e2e tests
+- [x] `progress.md` updated per SI
+- [x] `CLAUDE.md` updated after code is real
+- [x] `npm test`, `npm run test:e2e`, `npx tsc --noEmit`, `npm run lint` pass

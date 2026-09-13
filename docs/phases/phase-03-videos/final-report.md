@@ -62,6 +62,7 @@ O ambiente local agora executa API, worker, PostgreSQL, Mailpit, MinIO e Redis p
 - O teste de idempotencia da fila deixou de depender do estado transitório `wait` e passou a comparar o ID determinístico do job, permanecendo verde com o worker ativo.
 - O Compose passou a iniciar API e worker automaticamente, com volumes `node_modules` separados para evitar concorrencia e artefatos nativos do Windows.
 - O override de `undici` foi mantido no major 6 compativel com seus consumidores.
+- A auditoria final de 2026-09-13 serializou Jest com `maxWorkers: 1` e removeu defaults de teste que forcavam `localhost` dentro do container. Storage, fila e E2E de videos agora usam `minio`, `redis` e `db` no Compose, preservando overrides `TEST_*`.
 
 ## Riscos residuais
 

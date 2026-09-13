@@ -19,7 +19,8 @@ describe('VideoProcessingQueueService (integration)', () => {
   beforeAll(async () => {
     process.env = {
       ...originalEnv,
-      REDIS_HOST: process.env.TEST_REDIS_HOST ?? 'localhost',
+      REDIS_HOST:
+        process.env.TEST_REDIS_HOST ?? process.env.REDIS_HOST ?? 'redis',
       VIDEO_PROCESSING_QUEUE_NAME: queueName,
     };
     module = await Test.createTestingModule({

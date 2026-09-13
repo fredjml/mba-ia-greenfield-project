@@ -1,28 +1,28 @@
 ---
 libs:
   "@nestjs/bullmq":
-    version: "to be pinned during implementation"
+    version: "12.0.0"
     source: "NestJS official queues documentation"
     fetched_at: "2026-09-12T00:00:00-03:00"
   bullmq:
-    version: "to be pinned during implementation"
+    version: "6.3.4"
     source: "NestJS official queues documentation"
     fetched_at: "2026-09-12T00:00:00-03:00"
   ioredis:
-    version: "to be pinned during implementation"
+    version: "5.11.1"
     source: "BullMQ/NestJS Redis queue dependency"
     fetched_at: "2026-09-12T00:00:00-03:00"
   "@aws-sdk/client-s3":
-    version: "to be pinned during implementation"
+    version: "3.1131.0"
     source: "AWS SDK for JavaScript v3 S3 documentation"
     fetched_at: "2026-09-12T00:00:00-03:00"
   "@aws-sdk/s3-request-presigner":
-    version: "to be pinned during implementation"
+    version: "3.1131.0"
     source: "AWS S3 presigned URL documentation"
     fetched_at: "2026-09-12T00:00:00-03:00"
   nanoid:
-    version: "to be pinned during implementation"
-    source: "package documentation / installed version check required"
+    version: "6.0.1"
+    source: "package documentation and installed dependency tree"
     fetched_at: "2026-09-12T00:00:00-03:00"
 sources_mtime:
   docs/decisions/technical-decisions-phase-03-videos.md: "2026-09-12T00:00:00-03:00"
@@ -30,7 +30,7 @@ sources_mtime:
 
 # phase-03-videos - Library References
 
-Distilled references for the Phase 03 libraries and platform APIs. Before implementing, re-fetch with Context7 whenever available and compare with the versions actually installed in `nestjs-project/package.json`.
+Distilled references for the Phase 03 libraries and platform APIs. Versions above were confirmed from the installed dependency tree and `nestjs-project/package-lock.json` on 2026-09-13.
 
 ## @nestjs/bullmq / bullmq / ioredis
 
@@ -103,7 +103,7 @@ Distilled references for the Phase 03 libraries and platform APIs. Before implem
 
 ## nanoid
 
-**Source:** package documentation / installed version check required before implementation.
+**Source:** package documentation and installed dependency tree.
 
 **Use in this phase:**
 
