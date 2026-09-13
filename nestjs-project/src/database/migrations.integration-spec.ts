@@ -108,9 +108,9 @@ describe('Database migrations (integration)', () => {
       `SELECT indexdef FROM pg_indexes
        WHERE schemaname = 'public' AND tablename = 'videos'`,
     );
-    expect(indexes.some(({ indexdef }) =>
-      indexdef.includes('(channel_id, status)'),
-    )).toBe(true);
+    expect(
+      indexes.some(({ indexdef }) => indexdef.includes('(channel_id, status)')),
+    ).toBe(true);
   });
 
   it('should revert the videos migration and remove the videos table', async () => {

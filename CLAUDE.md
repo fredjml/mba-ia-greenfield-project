@@ -23,8 +23,10 @@ See `docs/diagrams/software-arch.mermaid` for the full diagram. Key containers:
 - **Video Worker** (FFmpeg) → consumes jobs from queue, processes videos, updates DB and storage
 - **Database** (PostgreSQL) → users, channels, videos, comments, likes
 - **Object Storage** (S3/MinIO) → video files and thumbnails
-- **Message Queue** (TBD) → video processing job queue
+- **Message Queue** (Redis/BullMQ) → video processing job queue
 - **Email Service** (SMTP) → account confirmation and password recovery
+
+The API and video worker are separate NestJS entrypoints. The worker consumes the `video-processing` BullMQ queue and uses FFmpeg/ffprobe to create thumbnails and media metadata.
 
 ## Docker Networking
 
@@ -32,8 +34,9 @@ This project runs entirely in Docker containers. When configuring connections be
 
 Inside a container, `localhost` refers to the container itself, not the host machine or other containers. Services communicate through the Docker Compose network using their service names (e.g., `db`, `nestjs-api`).
 
-- **Correct:** `DB_HOST=db` (the Compose service name)
-- **Wrong:** `DB_HOST=localhost`
+- **Correct in containers:** `DB_HOST=db`, `REDIS_HOST=redis`, `STORAGE_ENDPOINT=http://minio:9000`
+- **Correct for host-side tests against published Compose ports:** `DB_HOST=localhost`, `REDIS_HOST=localhost`, `STORAGE_ENDPOINT=http://localhost:9000`
+- **Wrong:** using `localhost` from one container to reach another container
 
 This applies to all environment variables, configuration files, and code that references service hosts.
 

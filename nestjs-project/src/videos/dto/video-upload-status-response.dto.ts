@@ -9,5 +9,5 @@ export class VideoUploadStatusResponseDto {
   slug: string;
 
   @ApiProperty({ enum: VideoStatus })
-  status: VideoStatus;
+  status: string;
 }

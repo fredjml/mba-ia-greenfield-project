@@ -151,7 +151,7 @@ describe('VerificationToken entity (integration)', () => {
 
     const found = await verificationTokenRepository.findOne({
       where: { token_hash: 'rel_hash' },
-      relations: ['user'],
+      relations: { user: true },
     });
 
     expect(found?.user.id).toBe(user.id);

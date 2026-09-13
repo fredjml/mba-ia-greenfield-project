@@ -111,7 +111,7 @@ describe('Video entity (integration)', () => {
 
     const found = await videoRepository.findOne({
       where: { slug: 'relation-video' },
-      relations: ['channel'],
+      relations: { channel: true },
     });
 
     expect(found?.channel.nickname).toBe(channel.nickname);

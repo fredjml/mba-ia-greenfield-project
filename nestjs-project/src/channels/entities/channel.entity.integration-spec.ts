@@ -126,7 +126,7 @@ describe('Channel entity (integration)', () => {
 
     const found = await channelRepository.findOne({
       where: { nickname: 'relchan' },
-      relations: ['user'],
+      relations: { user: true },
     });
 
     expect(found?.user.email).toBe(user.email);

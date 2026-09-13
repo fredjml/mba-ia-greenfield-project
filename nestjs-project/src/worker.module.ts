@@ -19,7 +19,6 @@ import { VideoProcessorService } from './videos/video-processor.service';
       isGlobal: true,
       load: [databaseConfig, queueConfig, storageConfig],
       validationSchema: envValidationSchema,
-      validationOptions: { allowUnknown: true, abortEarly: false },
     }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],

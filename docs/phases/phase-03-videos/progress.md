@@ -1,7 +1,7 @@
 # phase-03-videos - Progress
 
-**Status:** in progress
-**SIs:** 6/8 completed
+**Status:** completed
+**SIs:** 8/8 completed
 
 ## Pre-implementation
 
@@ -108,11 +108,31 @@
 - **Observations:** `404` is intentionally used instead of `403` so the API does not reveal whether another channel's private video exists.
 
 ### SI-03.7 - OpenAPI, Documentation and Progress Hygiene
-- **Status:** pending
-- **Tests:** not run
-- **Observations:** none
+- **Status:** completed
+- **Started:** 2026-09-13
+- **Completed:** 2026-09-13
+- **Scope authorized:** complete Swagger contracts for Phase 03, regenerate the versioned OpenAPI artifact, document backend operation and preserve validation evidence for audit.
+- **Checkpoint 2026-09-13:** repository verification showed the branch at commit `f047ab7` with SI-03.1 through SI-03.6 completed and pushed to `origin/feature/phase-03-videos`. Only `progress.md` and `src/openapi-export.integration-spec.ts` are currently modified.
+- **Implemented:** all six Phase 03 video operations now document bearer authentication, shared `ApiErrorEnvelope` failures, upload-size/storage/queue errors, processing-state conflicts, binary stream/download bodies, optional `Range` input, `206` response headers and invalid-range `416` behavior.
+- **OpenAPI artifact:** `npm.cmd run openapi:export` regenerated the versioned `nestjs-project/openapi.json`; a direct JSON assertion confirmed all six video paths and their required `200`, `201`, `204`, `206`, `401`, `404`, `409`, `413`, `416`, `429` and `502` responses.
+- **Focused OpenAPI validation:** `$env:DB_HOST='localhost'; $env:MAIL_HOST='localhost'; $env:REDIS_HOST='localhost'; npm.cmd test -- --runInBand src/openapi-export.integration-spec.ts` passed with `1/1` suite and `11/11` tests.
+- **Documentation:** replaced the generic backend README with local service, API/worker, upload lifecycle, validation and OpenAPI instructions; updated root/backend `CLAUDE.md` facts for Redis/BullMQ, MinIO, worker startup and host-side validation overrides.
+- **Static validation:** `npx.cmd tsc --noEmit`, focused ESLint, `npm.cmd run build` and editor diagnostics passed with no errors.
+- **Runtime checkpoint:** Compose has `db`, `mailpit`, `minio`, `nestjs-api` and `redis` running; `worker` exists but is currently stopped. Worker logs show an older TypeORM metadata failure followed by a later successful initialization before a `SIGTERM`, so worker startup must be revalidated during SI-03.8.
+- **Decision:** SI-03.7 accepted. The OpenAPI contract and operator documentation describe only implemented behavior; final broad regression and worker runtime revalidation remain in SI-03.8.
 
 ### SI-03.8 - Final Hardening and DoD
-- **Status:** pending
-- **Tests:** not run
-- **Observations:** none
+- **Status:** completed
+- **Started:** 2026-09-13
+- **Completed:** 2026-09-13
+- **Scope authorized:** final runtime validation, full unit/integration and E2E suites, type-check/build/lint, worker revalidation, security/log review and final DoD evidence.
+- **Full unit/integration validation:** `$env:DB_HOST='localhost'; $env:MAIL_HOST='localhost'; $env:REDIS_HOST='localhost'; $env:STORAGE_ENDPOINT='http://localhost:9000'; $env:STORAGE_PUBLIC_ENDPOINT='http://localhost:9000'; npm.cmd test -- --runInBand` passed with `36/36` executed suites and `199/199` executed tests; the `2` opt-in media tests were skipped on Windows and validated separately in Linux.
+- **Full E2E validation:** with the worker temporarily stopped to prevent BullMQ test-job consumption, `npm.cmd run test:e2e -- --runInBand` passed with `4/4` suites and `68/68` tests; the worker was restored afterward.
+- **Media runtime validation:** `RUN_MEDIA_INTEGRATION=true` inside the final worker image passed `2/2` FFmpeg/ffprobe tests, covering successful metadata/thumbnail processing and sanitized invalid-media failure.
+- **Static and contract validation:** `npx.cmd tsc --noEmit`, full `npm.cmd run lint`, `npm.cmd run build`, OpenAPI `11/11`, runtime baseline/post-upgrade comparison `4/4` and `git diff --check` passed.
+- **Security hardening:** production and complete `npm audit` both report `0 vulnerabilities`; compatible dependency patches and transitive overrides were applied without a Nest major upgrade. API/worker logs contain no presigned URL, credential, token or upload-ID patterns.
+- **Runtime hardening:** Docker now uses supported Node 24 LTS, installs dependencies during image build and isolates Linux `node_modules` in a named volume, preventing Windows native packages from leaking into containers. The API returned `HTTP 200`, the worker initialized `WorkerModule`, and API, worker, PostgreSQL, Mailpit, MinIO and Redis were all running; stateful dependencies reported healthy.
+- **Runtime comparison:** the local `.tsupgrader/runtime-validation` run passed its `4/4` checks; generated results remain ignored because they contain workstation-specific paths and are not portable project artifacts.
+- **Final review:** independent review passed without blocking findings after upload DTO schemas, binary MIME contracts and automatic Compose startup were corrected. Video E2E passed `16/16` with the worker active after queue idempotency stopped depending on the transient BullMQ `wait` state.
+- **Final report:** implementation scope, validation evidence, residual risks and future phases are consolidated in `docs/phases/phase-03-videos/final-report.md`.
+- **Decision:** SI-03.8 and Phase 03 accepted. Full DoD passed and no critical/high security finding remains open.

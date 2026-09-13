@@ -1,98 +1,82 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# StreamTube Backend
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+NestJS API for StreamTube account, channel and video workflows. Phase 03 adds authenticated multipart video uploads, asynchronous FFmpeg processing, owner-scoped status lookup, HTTP Range streaming and original-file download.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Local services
 
-## Description
+Docker Compose provides:
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+| Service | Purpose | Host port |
+| --- | --- | --- |
+| `nestjs-api` | NestJS HTTP API | `3000` |
+| `worker` | BullMQ video processor with FFmpeg/ffprobe | none |
+| `db` | PostgreSQL 17 | `5432` |
+| `redis` | BullMQ broker | `6379` |
+| `minio` | S3-compatible object storage and console | `9000`, `9001` |
+| `mailpit` | SMTP capture and web interface | `1025`, `8025` |
 
-## Project setup
+Copy the development environment template if `.env` does not exist, then start the full stack:
 
 ```bash
-$ npm install
+docker compose up -d --build
+docker compose ps
 ```
 
-## Compile and run the project
+To start only dependencies while running Node.js on the host:
 
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+docker compose up -d db redis minio mailpit
 ```
 
-## Run tests
+## Development
 
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+npm install
+npm run migration:run
+npm run start:dev
+npm run start:worker:dev
 ```
 
-## Deployment
+The API and worker are separate processes. Completing a multipart upload publishes one deterministic `process-video` BullMQ job. The worker downloads the source object, probes media metadata, generates a thumbnail, uploads it to MinIO and moves the video to `ready`; failures move it to `error` with a sanitized code.
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+The authenticated video flow is:
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+1. `POST /videos/uploads/init` creates the video and returns presigned multipart part URLs.
+2. The client uploads each part directly to MinIO.
+3. `POST /videos/{id}/uploads/complete` completes storage upload and enqueues processing.
+4. `GET /videos/{slug}` reports owner-scoped status and metadata.
+5. Ready videos are available from `GET /videos/{slug}/stream` and `GET /videos/{slug}/download`.
 
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+Private video resources are isolated by channel. Missing and cross-channel resources both return `404` to avoid exposing their existence.
+
+## Validation
+
+Integration and E2E suites share a database and must run serially. For host execution against Compose dependencies, override service hosts:
+
+```powershell
+$env:DB_HOST='localhost'
+$env:MAIL_HOST='localhost'
+$env:REDIS_HOST='localhost'
+$env:STORAGE_ENDPOINT='http://localhost:9000'
+$env:STORAGE_PUBLIC_ENDPOINT='http://localhost:9000'
+npm.cmd test -- --runInBand
+npm.cmd run test:e2e -- --runInBand
+npx.cmd tsc --noEmit
+npm.cmd run build
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+Real FFmpeg integration is opt-in with `RUN_MEDIA_INTEGRATION=true` and is intended to run in the worker image, which contains FFmpeg and ffprobe.
 
-## Resources
+## OpenAPI
 
-Check out a few resources that may come in handy when working with NestJS:
+Swagger metadata is generated from the application module and versioned in `openapi.json`:
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+```powershell
+$env:DB_HOST='localhost'
+$env:MAIL_HOST='localhost'
+$env:REDIS_HOST='localhost'
+npm.cmd run openapi:export
+npm.cmd test -- --runInBand src/openapi-export.integration-spec.ts
+```
 
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+The Phase 03 video contract documents bearer authentication, upload failures, processing-state conflicts, byte-range responses and storage/queue failures.

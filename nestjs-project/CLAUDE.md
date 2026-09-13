@@ -2,7 +2,7 @@
 
 ## Environment Startup Verification
 
-**Default behavior:** starting the environment means starting **only infrastructure services** (database, mail, etc.) — **never** start the NestJS application server unless the user explicitly asks to run/serve the project (e.g., "rode o projeto", "suba o servidor", "run the app").
+**Default behavior:** starting the environment means starting **only infrastructure services** (database, mail, storage and queue) — **never** start the NestJS API or worker unless the user explicitly asks to run/serve the project (e.g., "rode o projeto", "suba o servidor", "run the app").
 
 After starting infrastructure, always confirm the containers are up before proceeding:
 
@@ -13,27 +13,36 @@ docker compose ps   # all services must show status "running"
 Then verify each infrastructure service is actually ready to accept connections — not just running:
 
 - **PostgreSQL:** `docker compose exec db pg_isready -U streamtube` — expect `accepting connections`
+- **Redis:** `docker compose exec redis redis-cli ping` — expect `PONG`
+- **MinIO:** `http://localhost:9000/minio/health/ready` — expect HTTP `200`
 
-Only start the NestJS dev server (`npm run start:dev`) when the user **explicitly** asks to run the application — never as part of "start the environment".
+Only start the NestJS dev server (`npm run start:dev`) and worker (`npm run start:worker:dev`) when the user **explicitly** asks to run the application — never as part of "start the environment".
 
 ## Development Environment
 
 This project runs inside Docker. Always use the container for development:
 
 ```bash
-# Start containers
-docker compose up -d
+# Start infrastructure only
+docker compose up -d db mailpit minio redis
 
 # Install dependencies (first time only)
 docker compose exec nestjs-api npm install
 
 # Run the dev server (watch mode)
 docker compose exec nestjs-api npm run start:dev
+
+# Run the video worker (watch mode)
+docker compose exec worker npm run start:worker:dev
 ```
 
 Services:
 - `nestjs-api` — NestJS API, port `3000`
+- `worker` — BullMQ video processor with FFmpeg/ffprobe
 - `db` — PostgreSQL 17, port `5432`, database `streamtube`, user/password `streamtube`
+- `redis` — BullMQ broker, port `6379`
+- `minio` — S3-compatible object storage, API port `9000`, console port `9001`
+- `mailpit` — development SMTP server, SMTP port `1025`, web port `8025`
 
 All verification and teardown commands run on the **host machine**:
 
@@ -46,6 +55,7 @@ docker compose exec db pg_isready -U streamtube
 
 # Check container logs
 docker compose logs nestjs-api
+docker compose logs worker
 docker compose logs db
 
 # Tear down the entire environment
@@ -54,7 +64,7 @@ docker compose down
 
 ## Commands
 
-**Strict rule:** every `npm`, `npx`, `node`, `tsc`, and test command runs **inside the container**, never on the host. Running on the host causes env-var divergence (`DB_HOST` resolves to `localhost` instead of the Compose service), uses a different Node version, and produces results that do not reflect what runs in CI/prod.
+**Default rule:** run `npm`, `npx`, `node`, `tsc`, and test commands inside the container. Host-side focused tests are allowed when dependencies are intentionally reached through published ports and `DB_HOST`, `MAIL_HOST`, `REDIS_HOST`, `STORAGE_ENDPOINT` and `STORAGE_PUBLIC_ENDPOINT` are explicitly set to `localhost` URLs.
 
 ### Container-only commands (always prefix with `docker compose exec nestjs-api`)
 

@@ -128,4 +128,103 @@ describe('exportSpec (integration)', () => {
       }
     }
   });
+
+  it('documents all Phase 03 video operations as protected endpoints', () => {
+    const paths = document.paths as Record<
+      string,
+      Record<string, Record<string, unknown>>
+    >;
+    const operations = [
+      { path: '/videos/uploads/init', method: 'post' },
+      { path: '/videos/{id}/uploads/complete', method: 'post' },
+      { path: '/videos/{id}/uploads/abort', method: 'post' },
+      { path: '/videos/{slug}', method: 'get' },
+      { path: '/videos/{slug}/stream', method: 'get' },
+      { path: '/videos/{slug}/download', method: 'get' },
+    ];
+
+    for (const { path, method } of operations) {
+      const operation = paths[path]?.[method];
+      expect(operation).toBeDefined();
+      expect(operation.summary).toEqual(expect.any(String));
+      expect(operation.security).toContainEqual({ 'access-token': [] });
+      expect(operation.responses).toHaveProperty('401');
+      expect(operation.responses).toHaveProperty('404');
+      expect(operation.responses).toHaveProperty('429');
+    }
+  });
+
+  it('documents video upload, range and download response contracts', () => {
+    const paths = document.paths as Record<
+      string,
+      Record<string, Record<string, unknown>>
+    >;
+    const init = paths['/videos/uploads/init'].post;
+    const stream = paths['/videos/{slug}/stream'].get;
+    const download = paths['/videos/{slug}/download'].get;
+
+    expect(init.requestBody).toBeDefined();
+    expect(init.responses).toHaveProperty('201');
+    expect(init.responses).toHaveProperty('413');
+    expect(init.responses).toHaveProperty('502');
+    expect(stream.responses).toHaveProperty('200');
+    expect(stream.responses).toHaveProperty('206');
+    expect(stream.responses).toHaveProperty('409');
+    expect(stream.responses).toHaveProperty('416');
+    expect(download.responses).toHaveProperty('200');
+    expect(download.responses).toHaveProperty('409');
+    expect(download.responses).toHaveProperty('502');
+
+    const components = document.components as {
+      schemas: Record<
+        string,
+        { properties?: Record<string, unknown>; required?: string[] }
+      >;
+    };
+    const schemas = components.schemas;
+    expect(schemas.InitVideoUploadDto.properties).toEqual(
+      expect.objectContaining({
+        title: expect.any(Object),
+        filename: expect.any(Object),
+        contentType: expect.any(Object),
+        sizeBytes: expect.any(Object),
+        parts: expect.any(Object),
+      }),
+    );
+    expect(schemas.InitVideoUploadDto.required).toEqual(
+      expect.arrayContaining([
+        'title',
+        'filename',
+        'contentType',
+        'sizeBytes',
+        'parts',
+      ]),
+    );
+    expect(schemas.CompleteVideoUploadDto.properties).toEqual(
+      expect.objectContaining({
+        uploadId: expect.any(Object),
+        parts: expect.any(Object),
+      }),
+    );
+
+    for (const operation of [stream, download]) {
+      const responses = operation.responses as Record<
+        string,
+        { content?: Record<string, unknown> }
+      >;
+      expect(Object.keys(responses['200'].content ?? {})).toEqual(
+        expect.arrayContaining([
+          'video/mp4',
+          'video/webm',
+          'application/octet-stream',
+        ]),
+      );
+      for (const status of ['401', '404', '409', '429', '502']) {
+        const response = responses[status];
+        expect(Object.keys(response.content ?? {})).toEqual([
+          'application/json',
+        ]);
+      }
+    }
+  });
 });

@@ -145,7 +145,7 @@ describe('RefreshToken entity (integration)', () => {
 
     const found = await refreshTokenRepository.findOne({
       where: { token_hash: 'rel_hash' },
-      relations: ['user'],
+      relations: { user: true },
     });
 
     expect(found?.user.id).toBe(user.id);

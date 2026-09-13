@@ -5,8 +5,10 @@ services:
       dockerfile: Dockerfile.dev
     ports:
       - 3000:3000
+    command: sh -lc "npm ci && npm run start:dev"
     volumes:
       - .:/home/node/app
+      - api-node-modules:/home/node/app/node_modules
     depends_on:
       db:
         condition: service_healthy
@@ -21,9 +23,10 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.dev
-    command: npm run start:worker:dev
+    command: sh -lc "npm ci && npm run build && npm run start:worker"
     volumes:
       - .:/home/node/app
+      - worker-node-modules:/home/node/app/node_modules
     depends_on:
       db:
         condition: service_healthy
@@ -81,3 +84,5 @@ services:
 
 volumes:
   minio-data:
+  api-node-modules:
+  worker-node-modules:

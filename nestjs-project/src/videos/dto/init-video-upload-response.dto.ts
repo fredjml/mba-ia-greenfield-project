@@ -17,7 +17,7 @@ export class InitVideoUploadResponseDto {
   slug: string;
 
   @ApiProperty({ enum: VideoStatus })
-  status: VideoStatus;
+  status: string;
 
   @ApiProperty()
   uploadId: string;
@@ -26,5 +26,5 @@ export class InitVideoUploadResponseDto {
   partSize: number;
 
   @ApiProperty({ type: [UploadPartDto] })
-  parts: UploadPartDto[];
+  parts: Array<{ partNumber: number; url: string }>;
 }

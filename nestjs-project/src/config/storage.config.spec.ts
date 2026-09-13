@@ -3,11 +3,26 @@ import { Test } from '@nestjs/testing';
 import storageConfig from './storage.config';
 
 const ORIGINAL_ENV = process.env;
+const STORAGE_ENV_KEYS = [
+  'STORAGE_ENDPOINT',
+  'STORAGE_PUBLIC_ENDPOINT',
+  'STORAGE_REGION',
+  'STORAGE_ACCESS_KEY_ID',
+  'STORAGE_SECRET_ACCESS_KEY',
+  'STORAGE_BUCKET',
+  'STORAGE_FORCE_PATH_STYLE',
+  'STORAGE_PRESIGNED_URL_EXPIRES_SECONDS',
+];
 
 const loadConfig = async (
   env: Record<string, string | undefined> = {},
 ): Promise<ConfigType<typeof storageConfig>> => {
   process.env = { ...ORIGINAL_ENV, ...env };
+  for (const key of STORAGE_ENV_KEYS) {
+    if (!(key in env)) {
+      delete process.env[key];
+    }
+  }
 
   const module = await Test.createTestingModule({
     imports: [

@@ -161,7 +161,7 @@ export class AuthService {
 
     const record = await this.refreshTokenRepository.findOne({
       where: { token_hash: tokenHash },
-      relations: ['user'],
+      relations: { user: true },
     });
 
     if (!record) {
@@ -308,7 +308,7 @@ export class AuthService {
   ): Promise<VerificationToken> {
     const record = await this.verificationTokenRepository.findOne({
       where: { token_hash: this.hashToken(token), type, used_at: IsNull() },
-      relations: ['user'],
+      relations: { user: true },
     });
 
     if (!record) {

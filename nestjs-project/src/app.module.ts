@@ -30,7 +30,6 @@ import { VideosModule } from './videos/videos.module';
         videoConfig,
       ],
       validationSchema: envValidationSchema,
-      validationOptions: { allowUnknown: true, abortEarly: false },
     }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],

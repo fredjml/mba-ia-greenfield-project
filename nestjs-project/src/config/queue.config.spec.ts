@@ -3,11 +3,21 @@ import { Test } from '@nestjs/testing';
 import queueConfig from './queue.config';
 
 const ORIGINAL_ENV = process.env;
+const QUEUE_ENV_KEYS = [
+  'REDIS_HOST',
+  'REDIS_PORT',
+  'VIDEO_PROCESSING_QUEUE_NAME',
+];
 
 const loadConfig = async (
   env: Record<string, string | undefined> = {},
 ): Promise<ConfigType<typeof queueConfig>> => {
   process.env = { ...ORIGINAL_ENV, ...env };
+  for (const key of QUEUE_ENV_KEYS) {
+    if (!(key in env)) {
+      delete process.env[key];
+    }
+  }
 
   const module = await Test.createTestingModule({
     imports: [

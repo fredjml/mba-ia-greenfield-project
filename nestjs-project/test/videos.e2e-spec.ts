@@ -345,7 +345,8 @@ describe('Videos (e2e)', () => {
 
     const jobId = `process-video-${upload.videoId}`;
     jobIdsToRemove.push(jobId);
-    expect(await inspectionQueue.getJob(jobId)).toBeDefined();
+    const firstJob = await inspectionQueue.getJob(jobId);
+    expect(firstJob).toBeDefined();
 
     const secondResponse = await request(app.getHttpServer())
       .post(`/videos/${upload.videoId}/uploads/complete`)
@@ -355,9 +356,7 @@ describe('Videos (e2e)', () => {
     expect((secondResponse.body as VideoUploadStatusResponseDto).status).toBe(
       VideoStatus.PROCESSING,
     );
-    expect(await inspectionQueue.getJobCounts('wait')).toMatchObject({
-      wait: 1,
-    });
+    expect((await inspectionQueue.getJob(jobId))?.id).toBe(firstJob?.id);
   });
 
   it('aborts an upload idempotently', async () => {

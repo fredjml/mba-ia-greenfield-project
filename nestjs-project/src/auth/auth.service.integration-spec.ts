@@ -102,10 +102,12 @@ describe('AuthService — register (integration)', () => {
     dataSource = module.get(DataSource);
     verificationTokenRepository = dataSource.getRepository(VerificationToken);
     userRepository = dataSource.getRepository(User);
-  });
+  }, 15_000);
 
   afterAll(async () => {
-    await dataSource.destroy();
+    if (dataSource?.isInitialized) {
+      await dataSource.destroy();
+    }
   });
 
   beforeEach(async () => {

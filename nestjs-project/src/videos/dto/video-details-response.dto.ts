@@ -12,7 +12,7 @@ export class VideoDetailsResponseDto {
   slug: string;
 
   @ApiProperty({ enum: VideoStatus })
-  status: VideoStatus;
+  status: string;
 
   @ApiProperty({ nullable: true, type: Number })
   sizeBytes: number | null;

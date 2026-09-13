@@ -45,4 +45,6 @@ export const envValidationSchema = Joi.object({
   VIDEO_MAX_MULTIPART_PARTS: Joi.number().integer().positive().default(10000),
   VIDEO_ALLOWED_CONTENT_TYPES: Joi.string().default('video/mp4,video/webm'),
   SWAGGER_ENABLED: Joi.string().valid('true', 'false').default('false'),
-});
+})
+  .unknown(true)
+  .prefs({ abortEarly: false });
