@@ -20,5 +20,29 @@ export const envValidationSchema = Joi.object({
   MAIL_HOST: Joi.string().default('mailpit'),
   MAIL_PORT: Joi.number().default(1025),
   MAIL_FROM: Joi.string().default('"StreamTube" <noreply@streamtube.com>'),
+  STORAGE_ENDPOINT: Joi.string().uri().default('http://minio:9000'),
+  STORAGE_PUBLIC_ENDPOINT: Joi.string().uri().default('http://localhost:9000'),
+  STORAGE_REGION: Joi.string().default('us-east-1'),
+  STORAGE_ACCESS_KEY_ID: Joi.string().required(),
+  STORAGE_SECRET_ACCESS_KEY: Joi.string().required(),
+  STORAGE_BUCKET: Joi.string().default('streamtube-videos'),
+  STORAGE_FORCE_PATH_STYLE: Joi.string().valid('true', 'false').default('true'),
+  STORAGE_PRESIGNED_URL_EXPIRES_SECONDS: Joi.number()
+    .integer()
+    .min(60)
+    .default(900),
+  REDIS_HOST: Joi.string().default('redis'),
+  REDIS_PORT: Joi.number().port().default(6379),
+  VIDEO_PROCESSING_QUEUE_NAME: Joi.string().default('video-processing'),
+  VIDEO_MAX_UPLOAD_SIZE_BYTES: Joi.number()
+    .integer()
+    .positive()
+    .default(10 * 1024 * 1024 * 1024),
+  VIDEO_MULTIPART_PART_SIZE_BYTES: Joi.number()
+    .integer()
+    .positive()
+    .default(10 * 1024 * 1024),
+  VIDEO_MAX_MULTIPART_PARTS: Joi.number().integer().positive().default(10000),
+  VIDEO_ALLOWED_CONTENT_TYPES: Joi.string().default('video/mp4,video/webm'),
   SWAGGER_ENABLED: Joi.string().valid('true', 'false').default('false'),
 });

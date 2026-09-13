@@ -48,3 +48,69 @@ export class TokenReuseDetectedException extends DomainException {
     );
   }
 }
+
+export class VideoUploadValidationException extends DomainException {
+  constructor(message: string) {
+    super('VIDEO_INVALID_UPLOAD', 400, message);
+  }
+}
+
+export class VideoFileTooLargeException extends DomainException {
+  constructor() {
+    super('VIDEO_FILE_TOO_LARGE', 413, 'Video file exceeds the upload limit');
+  }
+}
+
+export class VideoChannelNotFoundException extends DomainException {
+  constructor() {
+    super('VIDEO_CHANNEL_NOT_FOUND', 404, 'Channel was not found');
+  }
+}
+
+export class VideoStorageException extends DomainException {
+  constructor() {
+    super('VIDEO_STORAGE_ERROR', 502, 'Video storage operation failed');
+  }
+}
+
+export class VideoNotFoundException extends DomainException {
+  constructor() {
+    super('VIDEO_NOT_FOUND', 404, 'Video was not found');
+  }
+}
+
+export class VideoUploadNotCompleteException extends DomainException {
+  constructor() {
+    super('VIDEO_UPLOAD_NOT_COMPLETE', 409, 'Video upload cannot be completed');
+  }
+}
+
+export class VideoUploadAbortedException extends DomainException {
+  constructor() {
+    super('VIDEO_UPLOAD_ABORTED', 409, 'Video upload was aborted');
+  }
+}
+
+export class VideoQueueException extends DomainException {
+  constructor() {
+    super('VIDEO_QUEUE_ERROR', 502, 'Video processing could not be queued');
+  }
+}
+
+export class VideoNotReadyException extends DomainException {
+  constructor() {
+    super('VIDEO_NOT_READY', 409, 'Video is not ready');
+  }
+}
+
+export class VideoProcessingFailedException extends DomainException {
+  constructor() {
+    super('VIDEO_PROCESSING_FAILED', 409, 'Video processing failed');
+  }
+}
+
+export class VideoInvalidRangeException extends DomainException {
+  constructor() {
+    super('VIDEO_INVALID_RANGE', 416, 'Video byte range is invalid');
+  }
+}
