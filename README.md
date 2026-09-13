@@ -151,6 +151,107 @@ Telas e Route Handlers BFF (`next-frontend`):
 
 Segurança: senhas com **Argon2**, **JWT** com `JwtAuthGuard` global (opt-out via `@Public()`), **rotação de refresh token** com detecção de reuso, **rate limiting** (`ThrottlerGuard`) nos endpoints de auth, e sessão no navegador via **iron-session** (cookies HTTP-only).
 
+### Vídeos (Fase 03)
+
+A Fase 03 está concluída no escopo backend. A entrega cobre API, worker, infraestrutura Docker e artefatos de processo. A interface de vídeos no frontend permanece fora do escopo desta fase.
+
+Capacidades entregues:
+
+| Capacidade | Evidência |
+|------------|-----------|
+| Upload direto de até 10 GB sem travar a API | `POST /videos/uploads/init` cria o registro e retorna URLs multipart pré-assinadas; os bytes vão direto para MinIO/S3. O limite está em `VIDEO_MAX_UPLOAD_SIZE_BYTES=10737418240`. |
+| Pré-cadastro automático | A entidade `Video` é persistida com status de upload antes do envio dos bytes. |
+| Object storage real | `nestjs-project/src/storage/storage.service.ts`; MinIO sobe no `nestjs-project/compose.yaml`. |
+| Fila real de processamento | Redis + BullMQ, fila `video-processing`, job determinístico `process-video-<videoId>`. |
+| Worker separado | `nestjs-project/src/worker.ts`, `src/worker.module.ts` e serviço `worker` no Compose. |
+| Processamento automático | `VideoProcessorService` usa ffprobe/FFmpeg para metadados, duração e thumbnail. |
+| Thumbnail automática | Thumbnail JPEG gerada pelo worker e enviada ao storage. |
+| URL única por vídeo | `slug` público com índice único no banco; ID interno permanece UUID. |
+| Streaming | `GET /videos/:slug/stream` com suporte a HTTP Range e respostas `200`, `206` e `416`. |
+| Download | `GET /videos/:slug/download` retorna o arquivo original como anexo. |
+| Isolamento por canal | Todas as operações privadas resolvem usuário autenticado para canal e retornam `404 VIDEO_NOT_FOUND` para recursos de outro canal. |
+| Persistência | Migration `1779000000000-CreateVideos.ts` cria a tabela `videos` ligada a `channels`. |
+
+Endpoints principais:
+
+| Método & rota | Descrição |
+|---------------|-----------|
+| `POST /videos/uploads/init` | Inicia upload multipart, cria o vídeo e retorna URLs pré-assinadas. |
+| `POST /videos/:id/uploads/complete` | Conclui o multipart e enfileira processamento. |
+| `POST /videos/:id/uploads/abort` | Cancela upload multipart. |
+| `GET /videos/:slug` | Consulta status, metadados e dados do vídeo do canal autenticado. |
+| `GET /videos/:slug/stream` | Reprodução por streaming com Range. |
+| `GET /videos/:slug/download` | Download do vídeo original. |
+
+#### Evidências de compliance da Fase 03
+
+Veredito: a Fase 03 atende integralmente a lista obrigatória do desafio no escopo backend. Não há pendência funcional ou de Definition of Done registrada para esta fase.
+
+Repositório e Git Flow:
+
+| Requisito | Status | Evidência |
+|-----------|--------|-----------|
+| Fork público | Conforme | `https://github.com/fredjml/mba-ia-greenfield-project`, fork público do repositório base. |
+| Branch de trabalho | Conforme | `feature/phase-03-videos`, publicada em `origin/feature/phase-03-videos`. |
+| Branch de integração | Conforme | `dev` publicada em `origin/dev`. |
+| Feature derivada de `dev` | Conforme | `git merge-base --is-ancestor dev feature/phase-03-videos` retornou código `0` durante a auditoria. |
+| Entrega remota | Conforme | Implementação funcional em `69cca91`; auditoria/compliance em `24710b9`. |
+
+Artefatos obrigatórios:
+
+| Artefato | Status | Caminho |
+|----------|--------|---------|
+| Decisões técnicas | Conforme | `docs/decisions/technical-decisions-phase-03-videos.md` |
+| Contexto | Conforme | `docs/phases/phase-03-videos/context.md` |
+| Validação clean | Conforme | `docs/phases/phase-03-videos/validation.md` |
+| Plano incremental com SIs | Conforme | `docs/phases/phase-03-videos/phase-03-videos.md` |
+| Referências de bibliotecas | Conforme | `docs/phases/phase-03-videos/library-refs.md` |
+| Progresso por incremento | Conforme | `docs/phases/phase-03-videos/progress.md` |
+| Relatório conclusivo | Conforme | `docs/phases/phase-03-videos/final-report.md` |
+| Índice detalhado de evidências | Conforme | `docs/phases/phase-03-videos/README.md` |
+| Instruções de IA | Conforme | `CLAUDE.md`, `nestjs-project/CLAUDE.md`, `.github/copilot-instructions.md` |
+
+Matriz requisito, implementação e teste:
+
+| Requisito obrigatório | Implementação | Evidência de teste |
+|-----------------------|---------------|--------------------|
+| Módulo de vídeos | `nestjs-project/src/videos/` | `videos.module.spec.ts`, `videos.service.spec.ts`, `test/videos.e2e-spec.ts` |
+| Tabela ligada ao canal | `src/videos/entities/video.entity.ts`, migration `1779000000000-CreateVideos.ts` | `video.entity.integration-spec.ts`, `migrations.integration-spec.ts` |
+| Storage para vídeos/thumbnails | `src/storage/storage.service.ts`, MinIO no Compose | `storage.service.integration-spec.ts`, `video-processor.integration-spec.ts` |
+| Upload até 10 GB sem bytes na API | Upload multipart direto por URL pré-assinada | Specs de config/storage/service e E2E de init |
+| Complete/abort multipart | Endpoints `/complete` e `/abort` | Storage integration, service specs e E2E |
+| Fila em segundo plano | Redis/BullMQ em `src/queue/` | `video-processing-queue.service.integration-spec.ts` |
+| Worker separado | `src/worker.ts`, `src/worker.module.ts` | `video-processing-worker.service.integration-spec.ts` |
+| Metadados, duração e thumbnail | `video-processor.service.ts`, FFmpeg/ffprobe | `video-processor.integration-spec.ts` no container worker |
+| URL única | `slug` com índice único | Testes de entidade e colisão |
+| Streaming sem download completo | `GET /videos/:slug/stream` com Range | `range-header.util.spec.ts` e E2E com bytes reais |
+| Download | `GET /videos/:slug/download` | E2E de download |
+| Autorização por canal | Resolver owner-scoped por JWT/canal | Policy/service specs e E2E com dois usuários |
+| OpenAPI | `nestjs-project/openapi.json` | `openapi-export.integration-spec.ts` |
+| Infraestrutura completa | API, worker, PostgreSQL, Mailpit, MinIO e Redis no Compose | `docker compose ps`, healthchecks e API HTTP 200 |
+
+Gates finais executados:
+
+| Gate | Resultado |
+|------|-----------|
+| `docker compose exec -T nestjs-api npm test` | PASS: 36/36 suites, 199/199 testes; 2 testes de mídia opt-in pulados nessa suite. |
+| `docker compose exec -T nestjs-api npm run test:e2e` | PASS: 4/4 suites, 68/68 testes. |
+| `docker compose exec -T nestjs-api npx tsc --noEmit` | PASS, código 0. |
+| `docker compose exec -T nestjs-api npm run lint` | PASS, código 0. |
+| `docker compose exec -T nestjs-api npm run build` | PASS, código 0. |
+| `docker compose exec -T nestjs-api npm audit --omit=dev` | PASS: 0 vulnerabilidades. |
+| `docker compose exec -T nestjs-api npm audit` | PASS: 0 vulnerabilidades. |
+| `docker compose exec -T worker sh -lc "RUN_MEDIA_INTEGRATION=true npm test -- --runInBand src/videos/video-processor.integration-spec.ts"` | PASS: 1/1 suite, 2/2 testes FFmpeg/ffprobe. |
+| Runtime Compose | PASS: `nestjs-api`, `worker`, `db`, `mailpit`, `minio` e `redis` ativos; API HTTP 200; `WorkerModule` inicializado. |
+| `git diff --check` | PASS. |
+
+Observações de auditoria:
+
+- A execução direta de `npm test` no host Windows não é a trilha autoritativa deste backend: os testes de integração dependem dos nomes Docker `db`, `redis` e `mailpit`.
+- O problema de `npm.ps1` no PowerShell foi corrigido com `CurrentUser: RemoteSigned`; ainda assim, os gates finais foram executados dentro do Compose, que é o ambiente documentado.
+- Os testes de mídia dependem de FFmpeg/ffprobe e rodam no container Linux do worker.
+- Não foi criado arquivo físico de 10 GB; o critério é coberto pela arquitetura multipart direta, limite configurado e validações automatizadas, conforme TD-10.
+
 ## 🛠️ Estrutura do Projeto
 
 ```
